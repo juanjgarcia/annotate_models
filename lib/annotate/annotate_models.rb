@@ -401,11 +401,11 @@ module AnnotateModels
         old_content.sub!(annotate_pattern(options), '')
 
         new_content = if %w(after bottom).include?(options[position].to_s)
-                        magic_comments_block + sorbet_comments_block + (old_content.rstrip + "\n\n" + wrapped_info_block)
+                        sorbet_comments_block + magic_comments_block + (old_content.rstrip + "\n\n" + wrapped_info_block)
                       elsif magic_comments_block.blank?
                         sorbet_comments_block + (sorbet_comments_block.blank? ? '' : "\n") + wrapped_info_block + old_content.lstrip
                       else
-                        magic_comments_block + sorbet_comments_block + "\n" + wrapped_info_block + old_content.lstrip
+                        sorbet_comments_block + magic_comments_block + "\n" + wrapped_info_block + old_content.lstrip
                       end
       else
         # replace the old annotation with the new one
