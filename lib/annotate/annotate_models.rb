@@ -162,9 +162,7 @@ module AnnotateModels
           type_remainder = (md_type_allowance - 2) - col_type.length
           info << (sprintf("# **`%s`**%#{name_remainder}s | `%s`%#{type_remainder}s | `%s`", col.name, " ", col_type, " ", attrs.join(", ").rstrip)).gsub('``', '  ').rstrip + "\n"
         else
-          info << format_default(col.name, max_size, col_type, bare_type_allowance, attrs)
-        end
-
+          info << format_default(col.name, col.comment, max_size, col_type, bare_type_allowance, attrs)
         end
       end
 
@@ -775,21 +773,28 @@ module AnnotateModels
     def max_schema_info_width(klass, options)
       cols = columns(klass, options)
 
-      if with_comments?(klass, options)
-        max_size = cols.map do |column|
-          column.name.size + (column.comment ? width(column.comment) : 0)
-        end.max || 0
-        max_size += 2
-      else
-        max_size = cols.map(&:name).map(&:size).max
-      end
+      max_size = cols.map(&:name).map(&:size).max
+
       max_size += options[:format_rdoc] ? 5 : 1
 
       max_size
     end
 
-    def format_default(col_name, max_size, col_type, bare_type_allowance, attrs)
-      sprintf("#  %s:%s %s", mb_chars_ljust(col_name, max_size), mb_chars_ljust(col_type, bare_type_allowance),  attrs.join(", ")).rstrip + "\n"
+    def format_default(col_name, col_comment, max_size, col_type, bare_type_allowance, attrs)
+      content = sprintf("#  %s:%s %s", mb_chars_ljust(col_name, max_size), mb_chars_ljust(col_type, bare_type_allowance),  attrs.join(", ")).rstrip + "\n"
+      
+      unless col_comment
+        return content
+      end
+
+      comment_line_prefix = '# >>'
+      escaped_comment = col_comment.gsub(/\t/, "\\t").gsub(/\n/, "#{comment_line_prefix}")
+      comment_lines = escaped_comment.scan(/.{0,77}[a-z.!?,;](?:\b|$)/mi)
+      comment_lines.each { |comment|
+        content << "#{comment_line_prefix}  #{comment.strip}\n"
+      }
+
+      content
     end
 
     def width(string)
