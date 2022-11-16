@@ -15,6 +15,10 @@ module AnnotateModels
 
   SKIP_ANNOTATION_PREFIX = '# -\*- SkipSchemaAnnotations'.freeze
 
+  RUBOCOP_ENTRY = "# rubocop:disable Layout/LineLength\n"
+  RUBOCOP_EXIT = "# rubocop:enable Layout/LineLength\n"
+  RUBOCOP_MAX_LINE_LENGTH = 100
+
   MATCHED_TYPES = %w(test fixture factory serializer scaffold controller helper).freeze
 
   # Don't show limit (#) on these column types
@@ -134,6 +138,7 @@ module AnnotateModels
     # the type (and length), and any optional attributes
     def get_schema_info(klass, header, options = {})
       info = "# #{header}\n"
+      info << RUBOCOP_ENTRY
       info << get_schema_header_text(klass, options)
 
       max_size = max_schema_info_width(klass, options)
@@ -175,6 +180,21 @@ module AnnotateModels
       end
 
       info << get_schema_footer_text(klass, options)
+
+      is_over_rubocop_limit = false
+      info.split("\n").each do |line|
+        if line.length > RUBOCOP_MAX_LINE_LENGTH
+          is_over_rubocop_limit = true
+          break
+        end
+      end
+
+      unless is_over_rubocop_limit
+        info.gsub!(RUBOCOP_ENTRY, '')
+        info.gsub!(RUBOCOP_EXIT, '')
+      end
+
+      info
     end
 
     def get_schema_header_text(klass, options = {})
@@ -197,6 +217,7 @@ module AnnotateModels
         info << "#++\n"
       else
         info << "#\n"
+        info << RUBOCOP_EXIT
       end
     end
 
